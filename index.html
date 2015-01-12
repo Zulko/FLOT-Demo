@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Plots tests</title>
+    <link href="css/examples.css" rel="stylesheet" type="text/css">
+    <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../../excanvas.min.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript" src="js/jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="js/jquery.flot.js"></script>
+    <script language="javascript" type="text/javascript" src="js/jquery.flot.navigate.js"></script>
+    <script language="javascript" type="text/javascript" src="js/jquery.flot.canvas.js"></script>
+    <script type="text/javascript">
+
+    $(function() {
+
+        // URL: here a constant for the demo. Can link to a file or any server.
+        var DATA_URL = "json/data-eu-gdp-growth.json";
+        
+
+        var options = {
+
+            canvas: true,
+
+            lines: {
+                show: true
+            },
+
+            points: {
+                show: true
+            },
+
+            xaxis: {
+                tickDecimals: 0,
+                tickSize: 1
+            },
+
+            xaxis: {
+                zoomRange: [0.1, 10],
+                panRange: [0, null]
+            },
+
+            yaxis: {
+                zoomRange: [0.1, 10],
+                panRange: [-1, null]
+            },
+
+            zoom: {
+                interactive: true
+            },
+
+            pan: {
+                interactive: true
+            },
+            
+            backgroundColor: "blue",
+
+            grid: {
+                hoverable: true,
+                clickable: true,
+            }
+            
+        };
+
+
+
+        var data = []; // stores the current data (useful for quick redraws)
+        var placeholder = $("#placeholder"); // HTML element for the plot
+        var plot = $.plot("#placeholder", data, options); // Create the plot
+
+
+
+        // Retrieve and plot the data from `DATAURL`
+        function plot_data() {
+
+            function onDataReceived(series) {
+                data = series.values
+                plot.setData(data)
+                plot.setupGrid();
+                plot.draw();
+            }
+
+            $.ajax({
+                    url: DATA_URL,
+                    type: "GET",
+                    dataType: "json",
+                    success: onDataReceived
+            });
+        };
+
+
+
+
+
+        // MANAGE PLOT HOVERING
+        
+        $("<div id='tooltip'></div>").css({
+            position: "absolute",
+            display: "none",
+            border: "1px solid #fdd",
+            padding: "2px",
+            "background-color": "#fee",
+            opacity: 0.80
+        }).appendTo("body");
+
+        $("#placeholder").bind("plothover", function (event, pos, item) {
+
+            if (item) {
+                var x = item.datapoint[0].toFixed(2),
+                    y = item.datapoint[1].toFixed(2);
+
+                $("#tooltip").html(x + "," + y)
+                    .css({top: item.pageY+5, left: item.pageX+5})
+                    .fadeIn(200);
+            } else {
+                $("#tooltip").hide();
+            }
+        });
+
+
+        // Make the plot responsive
+
+        window.onresize = function(event) {
+            plot = $.plot("#placeholder", data, plot.getOptions());
+        }
+
+
+
+        // Define the buttons in the plot's "toolbar".
+        
+
+
+
+        // Get PNG converts the plot to PNG, displays the image in a new window
+
+        $("#buttonGetPNG").click(function () {
+            var myCanvas = plot.getCanvas();
+            var image = myCanvas.toDataURL();
+            var width = plot.getOptions()["width"],
+                height = plot.getOptions()["height"];
+            var w = window.open('', '');
+
+            w.document.write("<document> <head><title>Plots</title></head>"
+                             + "<img title='PNG' src='" + image +"'/> </document>");
+            w.document.close();
+        });
+
+        // Link to the json file / server url
+        $("#buttonGetJSONData").attr('href', DATA_URL);
+
+        // Replots the zoom with the initial options
+        $("#buttonResetZoom").click(function () { 
+            plot = $.plot("#placeholder", data, options); }
+        );
+
+
+
+        
+        // Make a first plot and start polling every 3 second
+
+        plot_data();
+        window.setInterval(plot_data, 3000)
+
+    });
+
+    </script>
+</head>
+<body>
+
+    <div id="header">
+        <h2>PLOT</h2>
+    </div>
+
+    <div id="content">
+        
+        <div class="demo-container-container" >
+
+            <div class="demo-container">
+                <div class='toolbar'>
+                    <a id="buttonGetPNG" class="toolboxtext" href='#'>PNG</a>
+                    <a id="buttonGetJSONData" class="toolboxtext" target="_blank">JSON</a>
+                    <a id="buttonResetZoom" class="toolboxtext" href='#'>RESET ZOOM</a>
+                    
+                </div>
+                <div id="placeholder" class="demo-placeholder"></div>
+            </div>
+        </div>
+
+        <h3>Highlights:</h3>
+        <p>
+            You can zoom and pan with the mouse, and hover the points. The plot is responsive (it smartly redraws itself when you resize the window). It also updates itself every 3 seconds so it changes in real time with the data. You can export to PNG.
+
+        </p>
+
+    </div>
+
+</body>
+</html>
